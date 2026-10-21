@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OrbisFX Live Data Test</title>
+<style>
+body{background:#080d16;color:#eaf2ff;font-family:Arial,sans-serif;padding:20px}
+main{max-width:500px;margin:20px auto;background:#111b2b;padding:20px;border-radius:14px}
+h1{color:#38bdf8}
+.card{background:#080f1c;padding:14px;margin:10px 0;border-radius:8px}
+.value{color:#a7f3d0;font-weight:bold}
+button{width:100%;padding:14px;background:#38bdf8;border:0;border-radius:8px;font-weight:bold}
+</style>
+</head>
+<body>
+<main>
+<h1>OrbisFX</h1>
+<p>Deriv Live Tick Test</p>
+<div class="card">Connection: <span id="status" class="value">Connecting...</span></div>
+<div class="card">Market: Volatility 100 Index</div>
+<div class="card">Live Price: <span id="price" class="value">Waiting...</span></div>
+<div class="card">Last Digit: <span id="digit" class="value">—</span></div>
+<div class="card">Last Update: <span id="updated" class="value">—</span></div>
+<div class="card" id="message">Starting connection...</div>
+<button onclick="connect()">Reconnect</button>
+</main>
+<script>
+let ws;
+function connect(){
+if(ws)ws.close();
+document.getElementById("status").textContent="Connecting...";
+document.getElementById("message").textContent="Connecting to Deriv...";
+ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
+ws.onopen=()=>{
+document.getElementById("status").textContent="Connected";
+ws.send(JSON.stringify({ticks:"R_100",subscribe:1}));
+};
+ws.onmessage=(event)=>{
+const data=JSON.parse(event.data);
+if(data.error){
+document.getElementById("message").textContent="API error: "+data.error.message;
+return;
+}
+if(data.tick){
+const quote=String(data.tick.quote);
+document.getElementById("price").textContent=quote;
+document.getElementById("digit").textContent=quote.replace(".","").slice(-1);
+document.getElementById("updated").textContent=new Date().toLocaleTimeString();
+document.getElementById("status").textContent="Receiving live ticks";
+document.getElementById("message").textContent="Live data received";
+}
+};
+ws.onerror=()=>document.getElementById("message").textContent="Connection error";
+ws.onclose=()=>document.getElementById("status").textContent="Disconnected";
+}
+connect();
+</script>
+</body>
+  </html>
+  
